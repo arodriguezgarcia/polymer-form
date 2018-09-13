@@ -14,6 +14,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../../bower_components/paper-styles/color.html">
+<link rel="import" href="../../bower_components/paper-alert-dialog/paper-alert-dialog-doc-helper.html">
 <link rel="import" href="my-anadir-usuario.html">
 <link rel="import" href="shared-styles.html">
 
@@ -34,12 +37,66 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         display: none;
       }
 
+      paper-button.indigo {
+        background-color: var(--paper-indigo-500);
+        color: white;
+
+        --paper-button-raised-keyboard-focus: {
+          background-color: var(--paper-pink-a200) !important;
+          color: white !important;
+        }
+
+        ;
+      }
+
+      paper-button.indigo:hover {
+        background-color: var(--paper-indigo-400);
+      }
+
       ul {
         padding: 0px;
       }
 
       li {
         list-style: none;
+        display: flex;
+        padding: 5px;
+      }
+
+      li:nth-child(odd) {
+        background: #eeeeee;
+      }
+
+      li button {
+        border: none;
+        background: none;
+        cursor: pointer;
+      }
+
+      li .ico-usuario {
+        margin-right: 10px;
+        width: 50px;
+        height: 50px;
+      }
+
+      li button:hover .ico-eliminar {
+        color: #991111;
+      }
+
+      li .ico-eliminar {
+        color: #ee3333;
+      }
+
+      li button:hover .ico-editar {
+        color: #666666;
+      }
+
+      li .ico-editar {
+        color: #999999;
+      }
+
+      li .usuario {
+        width: 100%;
       }
     </style>
 
@@ -48,19 +105,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h1>Listado de usuarios</h1>
       <firebase-query id="firebaseq" app-name="polymer-form" path="/usuarios" data="{{usuarios}}"></firebase-query>
       <paper-spinner active="{{ocultarCargador}}" hidden$="{{!ocultarCargador}}">...</paper-spinner>
-      <paper-button on-click="clickAbrirAnadirUsuario">Añadir usuario</paper-button>
+      <div class="herramientas">
+        <paper-button on-click="clickAbrirAnadirUsuario" hidden$="{{ocultarCargador}}" raised class="custom indigo">
+          Añadir usuario
+        </paper-button>
+      </div>
       <ul>
         <template is="dom-repeat" items="[[usuarios]]" as="usuario">
           <li>
-            <iron-icon icon="account-circle"></iron-icon>[[usuario.usuario]]
-            <br />
-            Nombre y apellidos: [[usuario.nombre]] [[usuario.apellidos]]
+            <iron-icon icon="account-circle" class="ico-usuario"></iron-icon>
+            <span class="usuario">
+              <b>Usuario</b>
+              <br />
+              [[usuario.nombre]] [[usuario.apellidos]]
+            </span>
+            <button on-click="clickAbrirModificarUsuario">
+              <iron-icon icon="editor:mode-edit" class="ico-editar"></iron-icon>
+            </button>
+            <button on-click="clickEliminarUsuario">
+              <iron-icon icon="delete-forever" class="ico-eliminar"></iron-icon>
+            </button>
           </li>
         </template>
       </ul>
     </div>
-    <my-anadir-usuario on-cerrar-anadir-usuario="onCerrarAnadirUsuario" on-guardar-usuario="onGuardarUsuario"
-      modal-abierto="{{anadirUsuarioAbierto}}"></my-anadir-usuario>
+    <my-anadir-usuario usuario-seleccionado="{{usuarioSeleccionado}}" on-cerrar-anadir-usuario="onCerrarAnadirUsuario"
+      es-alta="[[esAlta]]" on-guardar-usuario="onGuardarUsuario" modal-abierto="{{anadirUsuarioAbierto}}"></my-anadir-usuario>
+    <paper-alert-dialog id="alert_confirm" confirm-button="Continuar">
+      <paper-alert-dialog-icon-header icon="icons:done">[[mensajeAlert]]</paper-alert-dialog-icon-header>
+    </paper-alert-dialog>
   </template>
 
   <script>
@@ -72,7 +145,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return {
           usuarios: {
             type: Array,
-            value: []
+            value: [],
+            reflectToAttribute: true,
+            notify: true
           },
           ocultarCargador: {
             type: Boolean,
@@ -82,20 +157,37 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             type: Boolean,
             value: false,
             reflectToAttribute: true
+          },
+          mensajeAlert: {
+            type: String,
+            value: ''
+          },
+          usuarioSeleccionado: {
+            type: Object,
+            value: {
+              nombre: '',
+              apellidos: ''
+            },
+            reflectToAttribute: true
+          },
+          esAlta: {
+            type: Boolean,
+            value: false
           }
         };
       }
 
       clickAbrirAnadirUsuario() {
-        console.log('abro')
+        this.usuarioSeleccionado = {
+          nombre: '',
+          apellidos: ''
+        }
+        this.esAlta = true;
         this.anadirUsuarioAbierto = true;
-        console.log(this.anadirUsuarioAbierto)
       }
 
       onCerrarAnadirUsuario() {
-        console.log('cierro')
         this.anadirUsuarioAbierto = false;
-        console.log(this.anadirUsuarioAbierto)
 
       }
 
@@ -103,9 +195,47 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return usuarios.length == 0;
       }
 
-      onGuardarUsuario(e) {
-        this.$.firebaseq.ref.push(e.detail.nuevoUsuario);
-        console.log('Usuario creado', e.detail.nuevoUsuario);
+      onGuardarUsuario() {
+        if (this.esAlta) {
+          this.$.firebaseq.ref.push(this.usuarioSeleccionado).then(() => {
+            this.mensajeAlert = 'Usuario creado correctamente';
+            console.log('Usuario creado', this.usuarioSeleccionado);
+            this.onCerrarAnadirUsuario();
+            this.$.alert_confirm.open();
+          });
+
+        } else {
+          this.$.firebaseq.ref.child(this.usuarioSeleccionado.$key).set({
+            nombre: this.usuarioSeleccionado.nombre,
+            apellidos: this.usuarioSeleccionado.apellidos
+          }).then(() => {
+            const indice = this.usuarios.indexOf(this.usuarioSeleccionado);
+            // No actualiza el array
+            this.notifyPath(`usuarios.${indice}.nombre`);
+            this.notifyPath(`usuarios.${indice}.apellidos`);
+            this.mensajeAlert = 'Usuario modificado correctamente';
+            console.log('Usuario modificado', this.usuarioSeleccionado);
+            this.onCerrarAnadirUsuario();
+            this.$.alert_confirm.open();
+          })
+        }
+
+      }
+
+      clickAbrirModificarUsuario(e) {
+        this.esAlta = false;
+        this.usuarioSeleccionado = e.model.usuario;
+        this.anadirUsuarioAbierto = true;
+      }
+
+      clickEliminarUsuario(e) {
+        const key = e.model.usuario.$key;
+        console.log(key);
+        this.$.firebaseq.ref.child(key).remove().then(() => {
+          this.mensajeAlert = 'Usuario eliminado correctamente';
+          this.$.alert_confirm.open();
+          console.log('Usuario eliminado');
+        });
       }
 
     }

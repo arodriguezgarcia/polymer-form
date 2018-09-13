@@ -22,18 +22,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       :host {
         display: block;
       }
+
+      paper-dialog-lite {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+        background: white;
+        color: #2196F3;
+        padding: 40px;
+        box-shadow: 0 12px 16px 1px rgba(0, 0, 0, 0.14),
+          0 4px 22px 3px rgba(0, 0, 0, 0.12),
+          0 6px 7px -4px rgba(0, 0, 0, 0.4);
+        height: calc(100vh - 80px);
+        width: calc(100vw - 80px);
+        font-size: 20px;
+        text-align: center;
+      }
     </style>
-    {{modalAbierto}}
-    <paper-dialog-lite opened="{{modalAbierto}}">
+    <paper-dialog-lite opened="{{modalAbierto}}" on-iron-overlay-closed="onCerrarModal">
       <div class="card">
-        <div class="circle">AU</div>
-        <h1>Añadir usuario</h1>
-        <paper-input required auto-validate error-message="Introduce el nombre" value="{{nuevoNombre}}" label="Nombre">
+        <h1>[[tituloPagina]]</h1>
+        <paper-input required auto-validate error-message="Introduce el nombre" value="{{usuarioSeleccionado.nombre}}"
+          id="nombre" label="Nombre">
           <div slot="prefix">
             <iron-icon icon="account-circle"></iron-icon>
           </div>
         </paper-input>
-        <paper-input required auto-validate error-message="Introduce el apellido" value="{{nuevoApellido}}" label="Apellidos">
+        <paper-input required auto-validate error-message="Introduce el apellido" value="{{usuarioSeleccionado.apellidos}}"
+          label="Apellidos">
           <paper-input-error slot="add-on">Escribe algún apellido</paper-input-error>
         </paper-input>
         <div class='buttons'>
@@ -51,24 +65,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       static get properties() {
         return {
-          nuevoNombre: {
-            type: String,
-            value: '',
-            reflectToAttribute: true
-          },
-          nuevoApellido: {
-            type: String
-          },
           modalAbierto: {
             type: Boolean,
             value: false,
             reflectToAttribute: true
+          },
+          usuarioSeleccionado: {
+            type: Object,
+            value: {
+              nombre: '',
+              apellidos: ''
+            }
+          },
+          esAlta: {
+            type: Boolean
+          },
+          tituloPagina: {
+            type: String,
+            computed: 'generarTitulo(esAlta)'
           }
         };
       }
 
       validarUsuario() {
-        if (this.nuevoNombre !== '' && this.nuevoApellido !== '') {
+        if (this.usuarioSeleccionado.nombre !== '' && this.usuarioSeleccionado.apellidos !== '') {
           return true;
         }
         return false;
@@ -78,19 +98,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.dispatchEvent(new CustomEvent('cerrar-anadir-usuario'));
       }
 
+      onCerrarModal() {
+        this.clickCerrarModal();
+      }
+
       clickGuardarUsuario() {
         if (this.validarUsuario()) {
-          let nuevoUsuario = {
-            nombre: this.nuevoNombre,
-            apellidos: this.nuevoApellido,
-          }
-          this.dispatchEvent(new CustomEvent('guardar-usuario', {
-            detail: {
-              nuevoUsuario
-            }
-          }));
+          this.dispatchEvent(new CustomEvent('guardar-usuario'));
+          this.$.nombre.invalid = false;
         }
       }
+
+      generarTitulo(esAlta) {
+        return `${(esAlta ? 'Añadir' : 'Modificar')} usuario`;
+      }
+
     }
 
     window.customElements.define(MyAnadirUSuario.is, MyAnadirUSuario);
