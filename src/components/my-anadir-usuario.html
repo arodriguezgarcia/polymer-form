@@ -1,0 +1,98 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-dialog-lite/paper-dialog-lite.html">
+<link rel="import" href="../../bower_components/paper-dialog-lite/paper-dialog-lite.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="my-anadir-usuario">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+    </style>
+    {{modalAbierto}}
+    <paper-dialog-lite opened="{{modalAbierto}}">
+      <div class="card">
+        <div class="circle">AU</div>
+        <h1>Añadir usuario</h1>
+        <paper-input required auto-validate error-message="Introduce el nombre" value="{{nuevoNombre}}" label="Nombre">
+          <div slot="prefix">
+            <iron-icon icon="account-circle"></iron-icon>
+          </div>
+        </paper-input>
+        <paper-input required auto-validate error-message="Introduce el apellido" value="{{nuevoApellido}}" label="Apellidos">
+          <paper-input-error slot="add-on">Escribe algún apellido</paper-input-error>
+        </paper-input>
+        <div class='buttons'>
+          <paper-button on-click="clickGuardarUsuario">Guardar</paper-button>
+          <paper-button on-click="clickCerrarModal">Cancel</paper-button>
+        </div>
+      </div>
+    </paper-dialog-lite>
+  </template>
+
+  <script>
+    class MyAnadirUSuario extends Polymer.Element {
+      static get is() {
+        return 'my-anadir-usuario';
+      }
+      static get properties() {
+        return {
+          nuevoNombre: {
+            type: String,
+            value: '',
+            reflectToAttribute: true
+          },
+          nuevoApellido: {
+            type: String
+          },
+          modalAbierto: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          }
+        };
+      }
+
+      validarUsuario() {
+        if (this.nuevoNombre !== '' && this.nuevoApellido !== '') {
+          return true;
+        }
+        return false;
+      }
+
+      clickCerrarModal() {
+        this.dispatchEvent(new CustomEvent('cerrar-anadir-usuario'));
+      }
+
+      clickGuardarUsuario() {
+        if (this.validarUsuario()) {
+          let nuevoUsuario = {
+            nombre: this.nuevoNombre,
+            apellidos: this.nuevoApellido,
+          }
+          this.dispatchEvent(new CustomEvent('guardar-usuario', {
+            detail: {
+              nuevoUsuario
+            }
+          }));
+        }
+      }
+    }
+
+    window.customElements.define(MyAnadirUSuario.is, MyAnadirUSuario);
+  </script>
+</dom-module>
